@@ -84,6 +84,10 @@
         :key="movie.id"
         :movie="movie"
       />
+
+      <div v-if="!movies.length">
+        No Movies
+      </div>
     </div>
   </div>
 </template>
