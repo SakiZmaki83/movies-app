@@ -73,7 +73,9 @@
         Submit
       </b-button>
     </b-form>
-    <!-- <div>List of Movies</div> -->
+    <div>List of Movies</div>
+
+
   </div>
 </template>
 
@@ -83,6 +85,7 @@ export default {
   name: 'AppMovies',
   data() {
     return {
+      movies: [],
       movieForm: {
         title: '',
         director: '',
@@ -97,6 +100,13 @@ export default {
     storeMovie() {
       MoviesService.store(this.movieForm)
     }
+  },
+  beforeRouteEnter(to, from, next) {
+    MoviesService.index().then(({ data }) => {
+      next((context) => {
+        context.movies = data;
+      })
+    })
   }
 }
 </script>
