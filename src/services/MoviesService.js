@@ -12,7 +12,11 @@ export default {
   store: function(movie) {
     return axios.post(ENDPOINTS.MOVIES, movie)
   },
-  index() {
-    return axios.get(ENDPOINTS.MOVIES)
+  index(term = '') {
+    return axios.get(ENDPOINTS.MOVIES, {
+      params: {
+        term
+      }
+    })
   }
 }
