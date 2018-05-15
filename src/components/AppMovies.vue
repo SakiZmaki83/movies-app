@@ -74,15 +74,24 @@
       </b-button>
     </b-form>
     <div>List of Movies</div>
-
-
+    <div class="container">
+      <movie-row
+        v-for="movie in movies"
+        :key="movie.id"
+        :movie="movie"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import MoviesService from './../services/MoviesService'
+import MovieRow from './MovieRow.vue'
 export default {
   name: 'AppMovies',
+  components: {
+    MovieRow
+  },
   data() {
     return {
       movies: [],
