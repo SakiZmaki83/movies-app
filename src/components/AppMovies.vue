@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-
+     <h1> {{ getCounter }} </h1>
     <movie-search
       @search-term-change="onSearchTermChanged"
       class="mt-4"
@@ -99,6 +99,10 @@ import MovieRow from './MovieRow.vue'
 import MovieSearch from './MovieSearch.vue'
 import MovieForm from './MovieForm.vue'
 import MoviePaginator from './MoviePaginator.vue'
+
+import { mapGetters, mapMutations } from 'vuex'
+
+
 export default {
   name: 'AppMovies',
   components: {
@@ -111,10 +115,25 @@ export default {
     return {
       movies: [],
       selectedMoviesIds: [],
+      intervalId: null,
       currentPage: 1
     }
   },
+
+
   computed: {
+    //magicNumber(){
+    //  console.log(this.$store.getters)
+    // return this.$store.getters.getCounter
+   //  
+   // },
+
+    ...mapGetters ([
+      'getCounter'
+    ]),
+
+
+    
     selectedMoviesCounter() {
       return this.selectedMoviesIds.length
     },
@@ -128,7 +147,12 @@ export default {
         (movie, index) => index >= bottomIndexLimit && index < topIndexLimit)
     }
   },
+
+
   methods: {
+    ...mapMutations([
+      'incrementCounter'
+    ]),
     storeMovie() {
       MoviesService.store(this.movieForm)
     },
@@ -168,6 +192,15 @@ export default {
           Object.assign(movie, { duration: parseFloat(movie.duration) }));
       })
     })
+  },
+  mounted() {
+    setInterval(() => {
+      this.incrementCounter()
+    }, 1000)
+    
+  },
+  destroyed() {
+    clearInterval(this.intervalId)
   }
 }
 </script>
