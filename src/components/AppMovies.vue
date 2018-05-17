@@ -1,95 +1,94 @@
 <template>
-  <div>
-    <h3>Store Movie</h3>
-    <b-form
-      @submit="storeMovie"
-      v-if="false"
-    >
-      <b-form-group
-        label="Title:"
-      >
-        <b-form-input
-          type="text"
-          v-model="movieForm.title"
-          placeholder="Enter title">
-        </b-form-input>
-      </b-form-group>
+  <div class="container">
 
-      <b-form-group
-        label="Director:"
-      >
-        <b-form-input
-          type="text"
-          v-model="movieForm.director"
-          placeholder="Enter director">
-        </b-form-input>
-      </b-form-group>
-
-
-      <b-form-group
-        label="ImageUrl:"
-      >
-        <b-form-input
-          type="text"
-          v-model="movieForm.imageUrl"
-          placeholder="Enter imageUrl">
-        </b-form-input>
-      </b-form-group>
-
-      <b-form-group
-        label="Duration:"
-      >
-        <b-form-input
-          type="text"
-          v-model="movieForm.duration"
-          placeholder="Enter duration"
-        >
-        </b-form-input>
-      </b-form-group>
-
-    <b-form-group
-      label="Release date:"
-      >
-        <b-form-input
-          type="text"
-          v-model="movieForm.releaseDate"
-          placeholder="Enter release date">
-        </b-form-input>
-      </b-form-group>
-
-      <b-form-group
-        label="Genre:"
-      >
-        <b-form-input
-          type="text"
-          v-model="movieForm.genre"
-          placeholder="Enter genre"
-        >
-        </b-form-input>
-      </b-form-group>
-
-      <b-button
-        type="submit"
-        variant="primary">
-        Submit
-      </b-button>
-    </b-form>
-    <div>List of Movies</div>
-    <div>Selected: {{ selectedMoviesCounter }}</div>
     <movie-search
       @search-term-change="onSearchTermChanged"
+      class="mt-4"
     />
-    <div class="container">
+
+    <div class="pt-3">
+      <div
+        class="row mb-2"
+        v-if="movies.length"
+      >
+        <div class="col-md">
+          <b-badge
+            pill
+            variant="primary"
+          >
+            Selected: {{ selectedMoviesCounter }}
+          </b-badge>
+        </div>
+        <div class="col-md">
+          <b-button
+            size="sm"
+            variant="warning"
+            class="float-right"
+            @click="deselectAll"
+          >
+            Deselect All
+          </b-button>
+
+          <b-button
+            size="sm"
+            variant="primary"
+            class="float-right mr-1"
+            @click="selectAll"
+          >
+              Select All
+          </b-button>
+
+          <b-dropdown
+            class="float-right mr-1"
+            size="sm"
+            text="Sort By"
+          >
+            <b-dropdown-item
+              @click="sortBy('title', 'asc')"
+            >
+              Name ASC
+            </b-dropdown-item>
+            <b-dropdown-item
+              @click="sortBy('title', 'desc')"
+            >
+              Name DESC
+            </b-dropdown-item>
+            <b-dropdown-divider></b-dropdown-divider>
+            <b-dropdown-item
+              @click="sortBy('duration', 'asc')"
+            >
+              Duration ASC
+            </b-dropdown-item>
+            <b-dropdown-item
+              @click="sortBy('duration', 'desc')"
+            >
+              Duration DESC
+            </b-dropdown-item>
+          </b-dropdown>
+        </div>
+      </div>
+
       <movie-row
-        v-for="movie in movies"
+        v-for="movie in visibleCollectionOfMovies"
         :key="movie.id"
         :movie="movie"
+        :selected-movies-ids="selectedMoviesIds"
         @on-selected-movie="onSelectedMovie"
       />
 
-      <div v-if="!movies.length">
+      <MoviePaginator
+        :number-of-pages="totalNumberOfPages"
+        :current-page="currentPage"
+        @selected-page="changeCurrentPage"
+      />
+
+      <b-alert
+        show
+        variant="warning"
+        v-if="!movies.length"
+      >
         No Movies
-      </div>
+      </b-alert>
     </div>
   </div>
 </template>
@@ -98,24 +97,35 @@
 import MoviesService from './../services/MoviesService'
 import MovieRow from './MovieRow.vue'
 import MovieSearch from './MovieSearch.vue'
+import MovieForm from './MovieForm.vue'
+import MoviePaginator from './MoviePaginator.vue'
 export default {
   name: 'AppMovies',
   components: {
     MovieRow,
-    MovieSearch
+    MovieSearch,
+    MovieForm,
+    MoviePaginator
   },
   data() {
     return {
       movies: [],
       selectedMoviesIds: [],
-      movieForm: {
-        title: '',
-        director: '',
-        imageUrl: '',
-        duration: '',
-        releaseDate: '',
-        genre: ''
-      }
+      currentPage: 1
+    }
+  },
+  computed: {
+    selectedMoviesCounter() {
+      return this.selectedMoviesIds.length
+    },
+    totalNumberOfPages() {
+      return Math.ceil(this.movies.length / 5)
+    },
+    visibleCollectionOfMovies() {
+      let bottomIndexLimit = (this.currentPage - 1) * 5
+      let topIndexLimit = bottomIndexLimit + 5
+      return this.movies.filter(
+        (movie, index) => index >= bottomIndexLimit && index < topIndexLimit)
     }
   },
   methods: {
@@ -133,17 +143,29 @@ export default {
         return;
       }
       this.selectedMoviesIds.push(movie.id)
-    }
-  },
-  computed: {
-    selectedMoviesCounter() {
-      return this.selectedMoviesIds.length
+    },
+    selectAll() {
+      this.selectedMoviesIds = this.movies.map((movie) => movie.id);
+    },
+    deselectAll() {
+      this.selectedMoviesIds = [];
+    },
+    sortBy(prop, order) {
+      let orderCoefficient = order === 'asc' ? 1 : -1;
+      this.movies = this.movies.sort((movie1, movie2) => {
+        return movie1[prop] >= movie2[prop] ?
+          orderCoefficient : -orderCoefficient
+      })
+    },
+    changeCurrentPage(page) {
+      this.currentPage = page;
     }
   },
   beforeRouteEnter(to, from, next) {
     MoviesService.index().then(({ data }) => {
       next((context) => {
-        context.movies = data;
+        context.movies = data.map(movie =>
+          Object.assign(movie, { duration: parseFloat(movie.duration) }));
       })
     })
   }
